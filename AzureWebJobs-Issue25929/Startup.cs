@@ -4,10 +4,14 @@ using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Hosting;
 using Microsoft.Azure.WebJobs.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using System;
 using System.Linq;
 
 [assembly: WebJobsStartup(typeof(AzureWebJobs_Issue25929.Startup))]
+
+// The order of execution is like that, I can't manipulate when WebJobsStartup is executed from external lib
+[assembly: WebJobsStartup(typeof(AzureWebJobs_Issue25929.OtherStartupLike_ServiceBusWebJobsStartup))]
 
 namespace AzureWebJobs_Issue25929
 {
@@ -43,6 +47,28 @@ because in current time I don't have reference to any '{nameof(MessagingProvider
 
             builder.Services.AddSingleton<IProxyGenerator>(x => new ProxyGenerator())
                 .AddSingleton<ServiceBusInterceptor>();
+
+            builder.Services.TryAddSingleton<InjectedClass>(
+                x => new InjectedClass("from main startup class"));
         }
+    }
+
+    public class OtherStartupLike_ServiceBusWebJobsStartup : IWebJobsStartup
+    {
+        public void Configure(IWebJobsBuilder builder)
+        {
+            builder.Services.TryAddSingleton<InjectedClass>(
+                x => new InjectedClass("from additional extension"));
+        }
+    }
+
+    public class InjectedClass
+    {
+        public InjectedClass(string name)
+        {
+            Name = name;
+        }
+
+        public string Name { get; }
     }
 }
