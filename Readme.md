@@ -1,3 +1,6 @@
+Sample for: https://github.com/Azure/azure-sdk-for-net/issues/25929
+
+
 There is main project containing Azure function that would try to override prefetch
 
 
